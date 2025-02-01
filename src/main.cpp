@@ -7,7 +7,7 @@ using namespace std;
 
 int main() {
     string imagePath1 = "pano/selfie/s1.jpg";
-    string imagePath2 = "pano/selfie/s2.jpg";
+    string imagePath2 = "pano/selfie/s5_eyesclosed.jpg";
 
     Mat img1 = imread(imagePath1, IMREAD_COLOR);
     Mat img2 = imread(imagePath2, IMREAD_COLOR);
@@ -29,6 +29,10 @@ int main() {
     Mat img_corners1, img_corners2;
     detectShiTomasiCorners(resizedImg1, img_corners1, corners1);
     detectShiTomasiCorners(resizedImg2, img_corners2, corners2);
+
+    // Mostra il numero di corner rilevati
+    cout << "Numero di corner rilevati nella prima immagine: " << corners1.size() << endl;
+    cout << "Numero di corner rilevati nella seconda immagine: " << corners2.size() << endl;
 
     // Salva le immagini con i corner rilevati
     string outputCorners1 = "output/shi_tomasi_corners1.jpg";

@@ -21,8 +21,6 @@ void detectShiTomasiCorners(const Mat& src, Mat& dst, vector<Point2f>& corners, 
     for (size_t i = 0; i < corners.size(); i++) {
         circle(dst, corners[i], 3, Scalar(0, 255, 0), FILLED);
     }
-
-    cout << "Numero di corner rilevati: " << corners.size() << endl;
 }
 
 void matchCorners(const vector<Point2f>& corners1, const vector<Point2f>& corners2, Mat& img1, Mat& img2, Mat& result, int& matchCount, int& unmatchedCount) {
@@ -35,6 +33,7 @@ void matchCorners(const vector<Point2f>& corners1, const vector<Point2f>& corner
 
     // Crea i vettori per le corrispondenze tra i corner
     vector<Point2f> matchedCorners1, matchedCorners2;
+    vector<Point2f> unmatchedCorners1, unmatchedCorners2;
 
     // Trova la distanza media tra i corner in corners1 per calibrare una soglia dinamica
     double avgDist = 0.0;
@@ -83,11 +82,25 @@ void matchCorners(const vector<Point2f>& corners1, const vector<Point2f>& corner
             circle(result, corners2[bestMatch] + Point2f(img1.cols, 0), 3, Scalar(0, 255, 0), FILLED);
 
             matchCount++;
+        } else {
+            unmatchedCorners1.push_back(corners1[i]);
+            unmatchedCorners2.push_back(corners2[bestMatch]);
         }
     }
 
     unmatchedCount = corners1.size() - matchCount;
-    cout << "Numero di match trovati: " << matchCount << endl;
-    cout << "Numero di corner non matchati in immagine 1: " << unmatchedCount << endl;
-    cout << "Numero di corner non matchati in immagine 2: " << corners2.size() - matchCount << endl;
+
+    // Collega i corner non corrispondenti con una linea rossa
+    for (size_t i = 0; i < unmatchedCorners1.size(); i++) {
+        line(result, unmatchedCorners1[i], unmatchedCorners2[i] + Point2f(img1.cols, 0), Scalar(0, 0, 255), 1);
+        circle(result, unmatchedCorners1[i], 3, Scalar(0, 0, 255), FILLED);
+        circle(result, unmatchedCorners2[i] + Point2f(img1.cols, 0), 3, Scalar(0, 0, 255), FILLED);
+    }
+
+    double matchPercentage = round((static_cast<double>(matchCount) / max(corners1.size(), corners2.size())) * 1000) / 10.0;
+
+    cout << "Numero di match trovati (inliers in verde): " << matchCount << endl;
+    cout << "Numero di match errati (outliers in rosso): " << unmatchedCorners1.size() << endl;
+    cout << "Percentuale di matching: " << matchPercentage << "%" << endl;
 }
+
