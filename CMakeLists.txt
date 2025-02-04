@@ -4,10 +4,12 @@ project(FaceScan)
 # Trova la libreria OpenCV
 find_package(OpenCV REQUIRED)
 
-# Aggiungi tutti i file sorgente
+# Aggiungi tutti i file sorgente, inclusi ml.cpp
 add_executable(FaceScan
     src/main.cpp
     src/shi-tomasi.cpp
+    src/ml.cpp 
+    src/sift.cpp
 )
 
 # Collega OpenCV
