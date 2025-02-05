@@ -12,6 +12,8 @@ void resizeImage(const cv::Mat& src, cv::Mat& dst, int newWidth, int newHeight);
    minDistance imposta la distanza minima tra due corner rilevati, evitando punti troppo vicini e migliorando la distribuzione dei corner nell'immagine. */
 void detectShiTomasiCorners(const cv::Mat& src, cv::Mat& dst, std::vector<cv::Point2f>& corners, int maxCorners = 1000, double qualityLevel = 0.02, double minDistance = 20);
 void matchCorners(const std::vector<cv::Point2f>& corners1, const std::vector<cv::Point2f>& corners2, cv::Mat& img1, cv::Mat& img2, cv::Mat& result, int& matchCount, int& unmatchedCount);
+
+// TODO: implementarle in shi-tomsi.cpp per estrarre i descriptor dai corner rilevati da quest'ultimo
 cv::Mat extract_descriptors(const cv::Mat& image, const std::vector<cv::Point2f>& corners, std::vector<cv::KeyPoint>& keypoints);
 void match_descriptors(const cv::Mat& descriptors1, const cv::Mat& descriptors2, cv::Mat& img1, cv::Mat& img2, cv::Mat& result, int& matchCount, int& unmatchedCount);
 

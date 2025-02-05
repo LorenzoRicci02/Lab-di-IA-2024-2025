@@ -54,7 +54,7 @@ void matchCorners(const vector<Point2f>& corners1, const vector<Point2f>& corner
     avgDist /= (corners1.size() * (corners1.size() - 1)) / 2;
 
     // Definisco una soglia dinamica basata sulla distanza media
-    double dynamicThreshold = avgDist * 1.2;  // Adattiamo la soglia dinamica alla distanza media calcolata in precedenza
+    double dynamicThreshold = avgDist * 1.2; 
 
     // Confrontiamo i corner tra le due immagini (salvati nei vettori corners1 e corners2)
     for (size_t i = 0; i < corners1.size(); i++) {
@@ -111,8 +111,8 @@ void matchCorners(const vector<Point2f>& corners1, const vector<Point2f>& corner
     // Calcolo della percentuale di matching tra le due foto
     double matchPercentage = round((static_cast<double>(matchCount) / max(corners1.size(), corners2.size())) * 1000) / 10.0;
 
-    cout << "Numero di match trovati (inliers in verde): " << matchCount << endl;
+    cout << "\nNumero di match trovati (inliers in verde): " << matchCount << endl;
     cout << "Numero di match errati (outliers in rosso): " << unmatchedCorners1.size() << endl;
-    cout << "Percentuale di matching: " << matchPercentage << "%" << endl;
+    cout << "Percentuale di matching geometrico: " << matchPercentage << "%" << endl;
 }
 

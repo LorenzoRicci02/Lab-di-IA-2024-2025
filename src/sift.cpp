@@ -1,13 +1,15 @@
 #include "sift.h"  
 #include <opencv2/features2d.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/calib3d.hpp>
 #include <iostream>
 
 void detectAndMatchSIFT(const cv::Mat& img1, const cv::Mat& img2, cv::Mat& imgMatches) {
-    // Inizializza il detector SIFT
+
+    // Inizializzazione del detector SIFT
     cv::Ptr<cv::SIFT> sift = cv::SIFT::create();
 
-    // Rileva i keypoints e calcola i descrittori per la prima immagine
+    // Rilevo i keypoints e calcola i descrittori per la prima immagine
     std::vector<cv::KeyPoint> keypoints1;
     cv::Mat descriptors1;
     sift->detectAndCompute(img1, cv::noArray(), keypoints1, descriptors1);
@@ -17,36 +19,44 @@ void detectAndMatchSIFT(const cv::Mat& img1, const cv::Mat& img2, cv::Mat& imgMa
     cv::Mat descriptors2;
     sift->detectAndCompute(img2, cv::noArray(), keypoints2, descriptors2);
 
-    // Usa un matcher KNN (FLANN o BFMatcher con K=2)
-    cv::FlannBasedMatcher matcher;  // FLANN matcher, più veloce per immagini più grandi
-
+    // Utilizzo il matcher Flann 
+    cv::FlannBasedMatcher matcher;
     std::vector<std::vector<cv::DMatch>> knn_matches;
-    matcher.knnMatch(descriptors1, descriptors2, knn_matches, 2);  // 2 vicini più prossimi
+    matcher.knnMatch(descriptors1, descriptors2, knn_matches, 2);
 
-    // Applica il Lowe's ratio test per selezionare solo le migliori corrispondenze
-    std::vector<cv::DMatch> good_matches;
-    for (size_t i = 0; i < knn_matches.size(); i++) {
-        if (knn_matches[i][0].distance < 0.79 * knn_matches[i][1].distance) {
-            good_matches.push_back(knn_matches[i][0]);
+    std::vector<cv::DMatch> all_matches;
+    for (const auto& matches : knn_matches) {
+        if (!matches.empty()) {
+            all_matches.push_back(matches[0]);
         }
     }
 
-    // Aggiungi il filtro per visualizzare solo le corrispondenze di buona qualità
-    double max_dist = 0;
-    double min_dist = 100;
-    
-    // Trova il massimo e minimo della distanza di matching
-    for (int i = 0; i < good_matches.size(); i++) {
-        double dist = good_matches[i].distance;
-        if (dist < min_dist) min_dist = dist;
-        if (dist > max_dist) max_dist = dist;
+    // Estraggo i punti chiave corrispondenti
+    std::vector<cv::Point2f> points1, points2;
+    for (const auto& match : all_matches) {
+        points1.push_back(keypoints1[match.queryIdx].pt);
+        points2.push_back(keypoints2[match.trainIdx].pt);
     }
 
-    // Disegna le corrispondenze sulle due immagini
-    cv::drawMatches(img1, keypoints1, img2, keypoints2, good_matches, imgMatches, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+    // Applico RANSAC per trovare la trasformazione omografica
+    std::vector<unsigned char> inliersMask;
+    if (points1.size() >= 4) { 
+        cv::Mat H = cv::findHomography(points1, points2, cv::RANSAC, 9.0, inliersMask, 5000, 0.995);
+    }
 
-    // Stampa i contatori
-    std::cout << "Keypoints nella prima immagine: " << keypoints1.size() << std::endl;
+    // Filtro i match usando la maschera degli inlier
+    std::vector<cv::DMatch> inlier_matches;
+    for (size_t i = 0; i < inliersMask.size(); i++) {
+        if (inliersMask[i]) {
+            inlier_matches.push_back(all_matches[i]);
+        }
+    }
+
+    // Disegno solo gli inlier
+    cv::drawMatches(img1, keypoints1, img2, keypoints2, inlier_matches, imgMatches, cv::Scalar(0, 255, 0), cv::Scalar(0, 255, 0), std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+
+    // Stampa le statistiche
+    std::cout << "\nKeypoints nella prima immagine: " << keypoints1.size() << std::endl;
     std::cout << "Keypoints nella seconda immagine: " << keypoints2.size() << std::endl;
-    std::cout << "Numero di match trovati: " << good_matches.size() << std::endl;
+    std::cout << "Numero di match rilevati con SIFT: " << inlier_matches.size() << std::endl;
 }
