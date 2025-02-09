@@ -111,7 +111,7 @@ void matchCorners(const vector<Point2f>& corners1, const vector<Point2f>& corner
     // Calcolo della percentuale di matching tra le due foto
     double matchPercentage = round((static_cast<double>(matchCount) / max(corners1.size(), corners2.size())) * 1000) / 10.0;
 
-    cout << "\nNumero di match trovati (inliers in verde): " << matchCount << endl;
+    cout << "Numero di match trovati (inliers in verde): " << matchCount << endl;
     cout << "Numero di match errati (outliers in rosso): " << unmatchedCorners1.size() << endl;
     cout << "Percentuale di matching geometrico: " << matchPercentage << "%" << endl;
 }

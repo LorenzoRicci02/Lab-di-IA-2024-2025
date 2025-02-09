@@ -5,4 +5,4 @@
 
 void detectAndMatchSIFT(const cv::Mat& img1, const cv::Mat& img2, cv::Mat& imgMatches);
 
-#endif // SIFT_H
+#endif 

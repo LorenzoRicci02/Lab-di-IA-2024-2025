@@ -1,5 +1,6 @@
 #include "shi-tomasi.h"
 #include "ml.h"
+#include "orb.h"
 #include "sift.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
@@ -9,8 +10,8 @@ using namespace std;
 
 int main() {
     // Path per le immagini da leggere 
-    string imagePath1 = "pano/selfie/s3.jpg";
-    string imagePath2 = "pano/selfie/s3_flip.jpg";
+    string imagePath1 = "pano/selfie/s1.jpg";
+    string imagePath2 = "pano/selfie/s2.jpg";
 
     Mat img1 = imread(imagePath1, IMREAD_COLOR);
     Mat img2 = imread(imagePath2, IMREAD_COLOR);
@@ -53,7 +54,8 @@ int main() {
     imwrite("output/face_features1.jpg", imgFace1);
     imwrite("output/face_features2.jpg", imgFace2);
 
-    cout << "Rilevamento completato, risultati del rilevamento salvati.\n";
+    cout << "Rilevamento completato." << endl;
+    cout << "Risultati del rilevamento salvati." << endl;
 
     ///////////////////////////  PARTE COMPUTER VISION ///////////////////////////
 
@@ -61,13 +63,13 @@ int main() {
     Mat imgCorners2 = resizedImg2.clone();
 
     vector<Point2f> corners1, corners2;
-    detectShiTomasiCorners(imgCorners1, imgCorners1, corners1, 100, 0.01, 10);
-    detectShiTomasiCorners(imgCorners2, imgCorners2, corners2, 100, 0.01, 10);
+    detectShiTomasiCorners(imgCorners1, imgCorners1, corners1);
+    detectShiTomasiCorners(imgCorners2, imgCorners2, corners2);
 
-    imwrite("output/shi_tomasi_corners1.jpg", imgCorners1);
-    imwrite("output/shi_tomasi_corners2.jpg", imgCorners2);
+    imwrite("output/corner_img1.jpg", imgCorners1);
+    imwrite("output/corner_img2.jpg", imgCorners2);
 
-    cout << "\nImmagini con i corner Shi-Tomasi salvate.";
+    cout << "\nImmagini con i corner Shi-Tomasi salvate." << endl;
 
     Mat matchShiTomasi;
     int matchCount = 0, unmatchedCount = 0;
@@ -77,8 +79,17 @@ int main() {
     
     matchCorners(corners1, corners2, matchImg1, matchImg2, matchShiTomasi, matchCount, unmatchedCount);
 
-    imwrite("output/shi_tomasi_matches.jpg", matchShiTomasi);
-    cout << "Immagine con i match Shi-Tomasi salvata.\n";
+    imwrite("output/geometrical_matches.jpg", matchShiTomasi);
+    cout << "Immagine con i match Shi-Tomasi salvata." << endl;
+    
+    Mat orbImg1 = resizedImg1.clone();
+    Mat orbImg2 = resizedImg2.clone();
+
+    Mat orbMatches;
+    detectAndMatchORB(orbImg1, orbImg2, orbMatches);
+
+    imwrite("output/orb_matches.jpg", orbMatches);
+    cout << "Immagini con i match ORB salvate." << endl;
 
     Mat siftImg1 = resizedImg1.clone();
     Mat siftImg2 = resizedImg2.clone();
@@ -87,7 +98,7 @@ int main() {
     detectAndMatchSIFT(siftImg1, siftImg2, siftMatches);
 
     imwrite("output/sift_matches.jpg", siftMatches);
-    cout << "Immagine con i match SIFT salvata.\n";
+    cout << "Immagine con i match SIFT salvata." << endl;
 
     return 0;
 }

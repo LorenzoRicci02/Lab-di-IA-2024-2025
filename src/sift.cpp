@@ -38,7 +38,7 @@ void detectAndMatchSIFT(const cv::Mat& img1, const cv::Mat& img2, cv::Mat& imgMa
         points2.push_back(keypoints2[match.trainIdx].pt);
     }
 
-    // Applico RANSAC per trovare la trasformazione omografica
+    // Applico RANSAC per evitare falsi positivi
     std::vector<unsigned char> inliersMask;
     if (points1.size() >= 4) { 
         cv::Mat H = cv::findHomography(points1, points2, cv::RANSAC, 9.0, inliersMask, 5000, 0.995);
@@ -56,7 +56,7 @@ void detectAndMatchSIFT(const cv::Mat& img1, const cv::Mat& img2, cv::Mat& imgMa
     cv::drawMatches(img1, keypoints1, img2, keypoints2, inlier_matches, imgMatches, cv::Scalar(0, 255, 0), cv::Scalar(0, 255, 0), std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 
     // Stampa le statistiche
-    std::cout << "\nKeypoints nella prima immagine: " << keypoints1.size() << std::endl;
-    std::cout << "Keypoints nella seconda immagine: " << keypoints2.size() << std::endl;
+    std::cout << "\nKeypoints nella prima immagine (SIFT): " << keypoints1.size() << std::endl;
+    std::cout << "Keypoints nella seconda immagine (SIFT): " << keypoints2.size() << std::endl;
     std::cout << "Numero di match rilevati con SIFT: " << inlier_matches.size() << std::endl;
 }

@@ -26,21 +26,21 @@ bool loadClassifiers(const string &facePath, const string &eyesPath, const strin
     }
 }
 
-// Funzione per rilevare le facce nell'immagine
+// Funzione per rilevare i volti nell'immagine
 void detectFaces(Mat &image, vector<Rect> &faces, CascadeClassifier &faceCascade) {
     Mat gray;
     cvtColor(image, gray, COLOR_BGR2GRAY);
     faceCascade.detectMultiScale(gray, faces, 1.1, 3, 0, Size(30, 30));
 }
 
-// Funzione per rilevare gli occhi in una regione facciale
+// Funzione per rilevare gli occhi nell'immagine
 void detectEyes(Mat &faceROI, vector<Rect> &eyes, CascadeClassifier &eyesCascade) {
     Mat gray;
     cvtColor(faceROI, gray, COLOR_BGR2GRAY);
     eyesCascade.detectMultiScale(gray, eyes, 1.1, 4, 0, Size(30, 30));
 }
 
-// Funzione per rilevare il sorriso in una regione facciale
+// Funzione per rilevare il sorriso nell'immagine
 void detectSmile(Mat &faceROI, vector<Rect> &smiles, CascadeClassifier &smileCascade) {
     Mat gray;
     cvtColor(faceROI, gray, COLOR_BGR2GRAY);
@@ -69,7 +69,7 @@ void drawFaceFeatures(Mat &image, vector<Rect> &faces, CascadeClassifier &eyesCa
             int radius = cvRound((eyes[j].width + eyes[j].height) * 0.20); 
 
             // Disegna il cerchio verde per gli occhi
-            circle(image, center, radius, Scalar(0, 255, 0), 2); // Cerchio verde per gli occhi
+            circle(image, center, radius, Scalar(0, 255, 0), 2);
             putText(image, "Eye", center - Point(0, 10), FONT_HERSHEY_SIMPLEX, 0.9, Scalar(0, 255, 0), 2, 8); 
         }
 

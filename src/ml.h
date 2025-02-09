@@ -7,8 +7,7 @@
 using namespace cv;
 using namespace std;
 
-bool loadClassifiers(const string &facePath, const string &eyesPath, const string &smilePath, 
-                     CascadeClassifier &faceCascade, CascadeClassifier &eyesCascade, CascadeClassifier &smileCascade);
+bool loadClassifiers(const string &facePath, const string &eyesPath, const string &smilePath, CascadeClassifier &faceCascade, CascadeClassifier &eyesCascade, CascadeClassifier &smileCascade);
 
 void detectFaces(Mat &image, vector<Rect> &faces, CascadeClassifier &faceCascade);
 
@@ -18,4 +17,4 @@ void detectSmile(Mat &faceROI, vector<Rect> &smiles, CascadeClassifier &smileCas
 
 void drawFaceFeatures(Mat &image, vector<Rect> &faces, CascadeClassifier &eyesCascade, CascadeClassifier &smileCascade);
 
-#endif // ML_H
+#endif 
