@@ -7,9 +7,10 @@ find_package(OpenCV REQUIRED)
 # Aggiungi tutti i file sorgente, inclusi ml.cpp
 add_executable(FaceScan
     src/main.cpp
-    src/shi-tomasi.cpp
+    src/corners.cpp
     src/ml.cpp 
     src/sift.cpp
+    src/orb.cpp
 )
 
 # Collega OpenCV
