@@ -7,7 +7,7 @@
 void detectAndMatchSIFT(const cv::Mat& img1, const cv::Mat& img2, cv::Mat& imgMatches) {
 
     // Inizializzazione del detector SIFT
-    cv::Ptr<cv::SIFT> sift = cv::SIFT::create();
+    cv::Ptr<cv::SIFT> sift = cv::SIFT::create(500, 3, 0.08, 10, 1.6);
 
     // Rilevo i keypoints e calcola i descrittori per la prima immagine
     std::vector<cv::KeyPoint> keypoints1;
@@ -41,7 +41,7 @@ void detectAndMatchSIFT(const cv::Mat& img1, const cv::Mat& img2, cv::Mat& imgMa
     // Applico RANSAC per evitare falsi positivi
     std::vector<unsigned char> inliersMask;
     if (points1.size() >= 4) { 
-        cv::Mat H = cv::findHomography(points1, points2, cv::RANSAC, 9.0, inliersMask, 5000, 0.995);
+        cv::Mat H = cv::findHomography(points1, points2, cv::RANSAC, 5.0, inliersMask, 5000, 0.995);
     }
 
     // Filtro i match usando la maschera degli inlier
