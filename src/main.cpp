@@ -1,12 +1,15 @@
-#include "corners.h"
+#include "ocv_corners.h"
+#include "my_corners.h"
 #include "ml.h"
 #include "orb.h"
 #include "sift.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
+#include <chrono> 
 
 using namespace cv;
 using namespace std;
+using namespace std::chrono;
 
 int main() {
     // Percorsi per le immagini da utilizzare nella parte di Machine Learning
@@ -69,15 +72,52 @@ int main() {
     // Parte Corner Detection
     cout << "\n- Parte Corner Detection:" << endl;
 
-    Mat imgCorners1 = imgCV1.clone();
-    Mat imgCorners2 = imgCV2.clone();
+    // Misura il tempo per la funzione detectShiTomasiCorners
+    auto start = high_resolution_clock::now();
+    Mat imgCorners1_1 = imgCV1.clone();
+    Mat imgCorners2_1 = imgCV2.clone();
 
-    vector<Point2f> corners1, corners2;
-    detectShiTomasiCorners(imgCorners1, imgCorners1, corners1);
-    detectShiTomasiCorners(imgCorners2, imgCorners2, corners2);
+    vector<Point2f> corners1_1, corners2_1;
+    detectShiTomasiCorners(imgCorners1_1, imgCorners1_1, corners1_1);
+    detectShiTomasiCorners(imgCorners2_1, imgCorners2_1, corners2_1);
 
-    imwrite("output/corner_shi1.jpg", imgCorners1);
-    imwrite("output/corner_shi2.jpg", imgCorners2);
+    imwrite("output/ocv_shi1.jpg", imgCorners1_1);
+    imwrite("output/ocv_shi2.jpg", imgCorners2_1);
+    auto stop = high_resolution_clock::now();
+    auto duration1 = duration_cast<milliseconds>(stop - start);
+    cout << "\nTempo di esecuzione per Shi-Tomasi con OpenCV: " << duration1.count() << " ms" << endl;
+
+    cout << "Immagini con i corner Shi-Tomasi salvate." << endl;
+
+    // Misura il tempo per la funzione ShiTomasiCorners
+    start = high_resolution_clock::now();
+    Mat imgCorners1_2 = imgCV1.clone();
+    Mat imgCorners2_2 = imgCV2.clone();
+
+    vector<KeyPoint> corners1_2, corners2_2;
+
+    // Eseguiamo la rilevazione dei corner Shi-Tomasi per entrambe le immagini
+    corners1_2 = ShiTomasiCorners(imgCorners1_2, 0.05, 1000, 7);
+    corners2_2 = ShiTomasiCorners(imgCorners2_2, 0.05, 1000, 7);
+
+    // Disegniamo i corner appena rilevati
+    Mat dst1 = imgCorners1_2.clone();
+    Mat dst2 = imgCorners2_2.clone();
+
+    for (size_t i = 0; i < corners1_2.size(); i++) {
+        circle(dst1, corners1_2[i].pt, 3, Scalar(0, 255, 0), FILLED);
+    }
+
+    for (size_t i = 0; i < corners2_2.size(); i++) {
+        circle(dst2, corners2_2[i].pt, 3, Scalar(0, 255, 0), FILLED);
+    }
+
+    // Salviamo le immagini con i corner disegnati
+    imwrite("output/my_shi1.jpg", dst1);
+    imwrite("output/my_shi2.jpg", dst2);
+    stop = high_resolution_clock::now();
+    auto duration2 = duration_cast<milliseconds>(stop - start);
+    cout << "Tempo di esecuzione per Shi-Tomasi reimplementato da me: " << duration2.count() << " ms" << endl;
 
     cout << "Immagini con i corner Shi-Tomasi salvate." << endl;
 
