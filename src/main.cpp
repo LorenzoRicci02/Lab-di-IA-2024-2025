@@ -12,52 +12,9 @@ using namespace std;
 using namespace std::chrono;
 
 int main() {
-    // Percorsi per le immagini da utilizzare nella parte di Machine Learning
-    string imagePathML1 = "pano/selfie/s1.jpg";
-    string imagePathML2 = "pano/selfie/group2.jpg";
-
     // Percorsi per le immagini da utilizzare nella parte di Computer Vision
     string imagePathCV1 = "pano/celeb/lm.jpg";
     string imagePathCV2 = "pano/flip/lm_totalflip.jpg";
-
-    // Carico le immagini per il machine learning
-    Mat imgML1 = imread(imagePathML1, IMREAD_COLOR);
-    Mat imgML2 = imread(imagePathML2, IMREAD_COLOR);
-
-    // Controllo se le immagini non sono vuote
-    if (imgML1.empty() || imgML2.empty()) {
-        cout << "Errore nel caricamento delle immagini per Machine Learning!" << endl;
-        return -1;
-    }
-
-    Mat resizedImgML1;
-    resizeImage(imgML1, resizedImgML1, 510, 680);
-
-    // Parte Machine Learning
-    cout << "- Parte Machine Learning:" << endl;
-    string face_classifier_path = "opencv/data/haarcascades/haarcascade_frontalface_alt2.xml";
-    string eyes_classifier_path = "opencv/data/haarcascades/haarcascade_eye.xml";
-    string smile_classifier_path = "opencv/data/haarcascades/haarcascade_smile.xml";
-
-    CascadeClassifier faceCascade, eyesCascade, smileCascade;
-    if (!loadClassifiers(face_classifier_path, eyes_classifier_path, smile_classifier_path, faceCascade, eyesCascade, smileCascade)) {
-        return -1;
-    }
-
-    Mat imgFace1 = resizedImgML1.clone();
-    Mat imgFace2 = imgML2.clone(); // La seconda non la ridimensiono (foto di gruppo)
-
-    vector<Rect> faces1, faces2;
-    detectFaces(imgFace1, faces1, faceCascade);
-    drawFaceFeatures(imgFace1, faces1, eyesCascade, smileCascade);
-
-    detectFaces(imgFace2, faces2, faceCascade);
-    drawFaceFeatures(imgFace2, faces2, eyesCascade, smileCascade);
-
-    imwrite("output/face_features1.jpg", imgFace1);
-    imwrite("output/face_features2.jpg", imgFace2);
-
-    cout << "Rilevamento completato per Machine Learning." << endl;
 
     // Carica le immagini per la parte di Computer Vision
     Mat imgCV1 = imread(imagePathCV1, IMREAD_COLOR);
@@ -70,7 +27,7 @@ int main() {
     }
 
     // Parte Corner Detection
-    cout << "\n- Parte Corner Detection:" << endl;
+    cout << "- Parte Corner Detection:" << endl;
 
     // Misura il tempo per la funzione detectShiTomasiCorners
     auto start = high_resolution_clock::now();
