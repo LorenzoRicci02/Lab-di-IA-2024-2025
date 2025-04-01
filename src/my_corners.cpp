@@ -6,6 +6,8 @@
 using namespace cv;
 using namespace std;
 
+// Shi-Tomasi
+
 pair<Mat, Mat> computeDerivatives(const Mat& image) {
     Mat gradX, gradY;
     Sobel(image, gradX, CV_64F, 1, 0, 3);
@@ -106,4 +108,105 @@ vector<KeyPoint> ShiTomasiCorners(const Mat& sourceImage, double qualityRatio, i
     }
 
     return detectedPoints;
+}
+
+// FAST
+
+vector<Point> circonferenza = {
+    {0, -3}, {1, -3}, {2, -2}, {3, -1}, {3, 0}, {3, 1}, {2, 2}, {1, 3},
+    {0, 3}, {-1, 3}, {-2, 2}, {-3, 1}, {-3, 0}, {-3, -1}, {-2, -2}, {-1, -3}
+};
+
+bool fastSegmentTest(const Mat &img, int x, int y, int threshold, int n) {
+    uchar pixel = img.at<uchar>(y, x);
+    int countHigh = 0, countLow = 0;
+    for (int i = 0; i < 16; i++) {
+        int dx = x + circonferenza[i].x;
+        int dy = y + circonferenza[i].y;
+        if (dx < 0 || dx >= img.cols || dy < 0 || dy >= img.rows)
+            continue;
+        uchar nearest = img.at<uchar>(dy, dx);
+        if (nearest > pixel + threshold) {
+            countHigh++;
+        } else if (nearest < pixel - threshold) {
+            countLow++;
+        }
+    }
+    return (countHigh >= n || countLow >= n);
+}
+
+bool fastHighSpeedTest(const Mat &img, int x, int y, int threshold) {
+    uchar pixel = img.at<uchar>(y, x);
+    vector<int> test_pixel = {1, 9, 5, 13};
+    int countHigh = 0, countLow = 0;
+    for (int i = 0; i < test_pixel.size(); i++) {
+        int j = test_pixel[i];
+        int dx = x + (circonferenza[j].x);
+        int dy = y + (circonferenza[j].y);
+        if (dx < 0 || dx >= img.cols || dy < 0 || dy >= img.rows)
+            continue;
+        uchar nearest = img.at<uchar>(dy, dx);
+        if (nearest > pixel + threshold) {
+            countHigh++;
+        } else if (nearest < pixel - threshold) {
+            countLow++;
+        }
+    }
+    return (countHigh >= 3 || countLow >= 3);
+}
+
+void nonMaximumSuppression(vector<KeyPoint> &keypoints, const Mat &img, int dist) {
+    vector<float> V_keypoints(keypoints.size());
+    for (int i = 0; i < keypoints.size(); i++) {
+        KeyPoint kp = keypoints[i];
+        int x = kp.pt.x;
+        int y = kp.pt.y;
+        int sum = 0;
+        uchar pixel = img.at<uchar>(y, x);
+        for (const auto& pt : circonferenza) {
+            int dx = x + pt.x;
+            int dy = y + pt.y;
+            if (dx >= 0 && dx < img.cols && dy >= 0 && dy < img.rows) {
+                uchar nearest = img.at<uchar>(dy, dx);
+                sum += abs(pixel - nearest);
+            }
+        }
+        V_keypoints[i] = sum;
+    }
+    for (int i = 0; i < keypoints.size(); i++) {
+        KeyPoint kp = keypoints[i];
+        int x = kp.pt.x;
+        int y = kp.pt.y;
+        for (int j = 0; j < keypoints.size(); j++) {
+            if (i != j) {
+                KeyPoint kp2 = keypoints[j];
+                int x2 = kp2.pt.x;
+                int y2 = kp2.pt.y;
+                if (abs(x - x2) <= dist && abs(y - y2) <= dist) {
+                    if (V_keypoints[i] < V_keypoints[j]) {
+                        keypoints.erase(keypoints.begin() + i);
+                        i--;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+vector<KeyPoint> FASTCorners(const Mat& sourceImage, int threshold, bool nonMaxSuppression) {
+    Mat grayImg;
+    cvtColor(sourceImage, grayImg, COLOR_BGR2GRAY);
+    vector<KeyPoint> keypoints;
+    for (int y = 3; y < grayImg.rows - 3; y++) {
+        for (int x = 3; x < grayImg.cols - 3; x++) {
+            if (fastHighSpeedTest(grayImg, x, y, threshold) && fastSegmentTest(grayImg, x, y, threshold)) {
+                keypoints.push_back(KeyPoint(x, y, 1));
+            }
+        }
+    }
+    if (nonMaxSuppression) {
+        nonMaximumSuppression(keypoints, grayImg);
+    }
+    return keypoints;
 }

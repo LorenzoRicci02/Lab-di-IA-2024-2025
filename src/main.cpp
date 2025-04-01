@@ -1,8 +1,7 @@
 #include "ocv_corners.h"
 #include "my_corners.h"
-#include "ml.h"
-#include "orb.h"
-#include "sift.h"
+#include "ocv_orb.h"
+#include "ocv_sift.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <chrono> 
@@ -27,9 +26,9 @@ int main() {
     }
 
     // Parte Corner Detection
-    cout << "- Parte Corner Detection:" << endl;
+    cout << "- Parte Corner Detection (Shi-Tomasi, FAST):" << endl;
 
-    // Misura il tempo per la funzione detectShiTomasiCorners
+    // Misura il tempo per la funzione detectShiTomasiCorners (OCV)
     auto start = high_resolution_clock::now();
     Mat imgCorners1_1 = imgCV1.clone();
     Mat imgCorners2_1 = imgCV2.clone();
@@ -44,20 +43,20 @@ int main() {
     auto duration1 = duration_cast<milliseconds>(stop - start);
     cout << "\nTempo di esecuzione per Shi-Tomasi con OpenCV: " << duration1.count() << " ms" << endl;
 
-    cout << "Immagini con i corner Shi-Tomasi salvate." << endl;
+    cout << "Immagini con i corner Shi-Tomasi (OCV) salvate." << endl;
 
-    // Misura il tempo per la funzione ShiTomasiCorners
+    // Misura il tempo per la funzione ShiTomasiCorners 
     start = high_resolution_clock::now();
     Mat imgCorners1_2 = imgCV1.clone();
     Mat imgCorners2_2 = imgCV2.clone();
 
     vector<KeyPoint> corners1_2, corners2_2;
 
-    // Eseguiamo la rilevazione dei corner Shi-Tomasi per entrambe le immagini
+    // Eseguo la rilevazione dei corner Shi-Tomasi per entrambe le immagini
     corners1_2 = ShiTomasiCorners(imgCorners1_2, 0.05, 1000, 7);
     corners2_2 = ShiTomasiCorners(imgCorners2_2, 0.05, 1000, 7);
 
-    // Disegniamo i corner appena rilevati
+    // Disegno i corner appena rilevati
     Mat dst1 = imgCorners1_2.clone();
     Mat dst2 = imgCorners2_2.clone();
 
@@ -76,8 +75,9 @@ int main() {
     auto duration2 = duration_cast<milliseconds>(stop - start);
     cout << "Tempo di esecuzione per Shi-Tomasi reimplementato da me: " << duration2.count() << " ms" << endl;
 
-    cout << "Immagini con i corner Shi-Tomasi salvate." << endl;
+    cout << "Immagini con i corner Shi-Tomasi salvate.\n" << endl;
 
+    start = high_resolution_clock::now();
     Mat imgFAST1 = imgCV1.clone();
     Mat imgFAST2 = imgCV2.clone();
     vector<KeyPoint> fastCorners1, fastCorners2;
@@ -87,8 +87,43 @@ int main() {
     detectFASTCorners(imgFAST2, imgFAST2, fastCorners2);
 
     // Salvo le immagini con i corner FAST
-    imwrite("output/corner_fast1.jpg", imgFAST1);
-    imwrite("output/corner_fast2.jpg", imgFAST2);
+    imwrite("output/ocv_fast1.jpg", imgFAST1);
+    imwrite("output/ocv_fast2.jpg", imgFAST2);
+    stop = high_resolution_clock::now();
+    auto duration3 = duration_cast<milliseconds>(stop - start);
+    cout << "Tempo di esecuzione per FAST con OpenCV: " << duration3.count() << " ms" << endl;
+
+    cout << "Immagini con i corner FAST (OCV) salvate." << endl;
+
+    // Misura il tempo per la funzione FASTCorners
+    start = high_resolution_clock::now();
+    Mat imgCorners1_3 = imgCV1.clone();
+    Mat imgCorners2_3 = imgCV2.clone();
+
+    vector<KeyPoint> corners1_3, corners2_3;
+
+    // Rilevazione corner con FAST per entrambe le immagini
+    corners1_3 = FASTCorners(imgCorners1_3, 50, true);
+    corners2_3 = FASTCorners(imgCorners2_3, 50, true);
+
+    // Disegno i corner FAST
+    Mat dst3 = imgCorners1_3.clone();
+    Mat dst4 = imgCorners2_3.clone();
+
+    for (size_t i = 0; i < corners1_3.size(); i++) {
+        circle(dst3, corners1_3[i].pt, 3, Scalar(0, 255, 0), FILLED);
+    }
+
+    for (size_t i = 0; i < corners2_3.size(); i++) {
+        circle(dst4, corners2_3[i].pt, 3, Scalar(0, 255, 0), FILLED);
+    }
+
+    // Salviamo le immagini con i corner FAST disegnati
+    imwrite("output/my_fast1.jpg", dst3);
+    imwrite("output/my_fast2.jpg", dst4);
+    stop = high_resolution_clock::now();
+    auto duration4 = duration_cast<milliseconds>(stop - start);
+    cout << "Tempo di esecuzione per FAST reimplementato da me: " << duration4.count() << " ms" << endl;
 
     cout << "Immagini con i corner FAST salvate." << endl;
 
