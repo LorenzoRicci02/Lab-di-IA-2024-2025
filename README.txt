@@ -10,3 +10,6 @@
 10/02/2025 - Rimosso confronto geometrico, implementato il Fast corner detector
 12/02/2025 - Aumentato il dataset e riorganizzato il main
 15/03/2025 - Rimossa parte ML, inizio a reimplementare gli algoritmi di CV
+17/03/2025 - Reimplementato Shi-Tomasi
+25/03/2025 - Reimplementato FAST
+26/03/2025 - Confronto Fast,Shi fatti da me con quelli fatti da OpenCV

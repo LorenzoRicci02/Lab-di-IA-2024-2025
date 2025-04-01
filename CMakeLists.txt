@@ -8,8 +8,8 @@ find_package(OpenCV REQUIRED)
 add_executable(FaceScan
     src/main.cpp
     src/ocv_corners.cpp
-    src/sift.cpp
-    src/orb.cpp
+    src/ocv_sift.cpp
+    src/ocv_orb.cpp
     src/my_corners.cpp
 )
 
