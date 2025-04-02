@@ -2,6 +2,7 @@
 #include "my_corners.h"
 #include "ocv_orb.h"
 #include "ocv_sift.h"
+#include "my_sift.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <chrono> 
@@ -61,11 +62,11 @@ int main() {
     Mat dst2 = imgCorners2_2.clone();
 
     for (size_t i = 0; i < corners1_2.size(); i++) {
-        circle(dst1, corners1_2[i].pt, 3, Scalar(0, 255, 0), FILLED);
+        circle(dst1, corners1_2[i].pt, 3, Scalar(0, 0, 255), FILLED);
     }
 
     for (size_t i = 0; i < corners2_2.size(); i++) {
-        circle(dst2, corners2_2[i].pt, 3, Scalar(0, 255, 0), FILLED);
+        circle(dst2, corners2_2[i].pt, 3, Scalar(0, 0, 255), FILLED);
     }
 
     // Salviamo le immagini con i corner disegnati
@@ -75,7 +76,20 @@ int main() {
     auto duration2 = duration_cast<milliseconds>(stop - start);
     cout << "Tempo di esecuzione per Shi-Tomasi reimplementato da me: " << duration2.count() << " ms" << endl;
 
-    cout << "Immagini con i corner Shi-Tomasi salvate.\n" << endl;
+    cout << "Immagini con i corner Shi-Tomasi salvate." << endl;
+
+    // Sovrapposizione delle immagini
+    Mat img1 = imread("output/ocv_shi1.jpg");
+    Mat img2 = imread("output/my_shi1.jpg");
+
+    // Sovrapponi le immagini
+    Mat result1;
+    addWeighted(img1, 0.5, img2, 0.5, 0, result1);
+
+    // Salva il risultato della sovrapposizione
+    imwrite("output/sovrapposizione_shi1.jpg", result1);
+
+    cout << "Immagini sovrapposte salvate.\n" << endl;
 
     start = high_resolution_clock::now();
     Mat imgFAST1 = imgCV1.clone();
@@ -111,11 +125,11 @@ int main() {
     Mat dst4 = imgCorners2_3.clone();
 
     for (size_t i = 0; i < corners1_3.size(); i++) {
-        circle(dst3, corners1_3[i].pt, 3, Scalar(0, 255, 0), FILLED);
+        circle(dst3, corners1_3[i].pt, 3, Scalar(0, 0, 255), FILLED);
     }
 
     for (size_t i = 0; i < corners2_3.size(); i++) {
-        circle(dst4, corners2_3[i].pt, 3, Scalar(0, 255, 0), FILLED);
+        circle(dst4, corners2_3[i].pt, 3, Scalar(0, 0, 255), FILLED);
     }
 
     // Salviamo le immagini con i corner FAST disegnati
@@ -126,6 +140,19 @@ int main() {
     cout << "Tempo di esecuzione per FAST reimplementato da me: " << duration4.count() << " ms" << endl;
 
     cout << "Immagini con i corner FAST salvate." << endl;
+
+    // Sovrapposizione delle immagini
+    Mat img3 = imread("output/ocv_fast1.jpg");
+    Mat img4 = imread("output/my_fast1.jpg");
+
+    // Sovrapponi le immagini
+    Mat result2;
+    addWeighted(img3, 0.5, img4, 0.5, 0, result2);
+
+    // Salva il risultato della sovrapposizione
+    imwrite("output/sovrapposizione_fast1.jpg", result2);
+
+    cout << "Immagini sovrapposte salvate.\n" << endl;
 
     // Parte Descriptor Matching
     cout << "\n- Parte Descriptor Matching (ORB, SIFT):" << endl;
