@@ -2,14 +2,16 @@
 #include "my_corners.h"
 #include "ocv_orb.h"
 #include "ocv_sift.h"
+#include "my_brief.h"
 #include "my_sift.h"
+#include "my_orb.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <chrono> 
 
 using namespace cv;
 using namespace std;
-using namespace std::chrono;
+using namespace chrono;
 
 int main() {
     // Percorsi per le immagini da utilizzare nella parte di Computer Vision
@@ -27,119 +29,89 @@ int main() {
     }
 
     // Parte Corner Detection
-    cout << "- Parte Corner Detection (Shi-Tomasi, FAST):" << endl;
+    cout << "- Parte Corner Detection (Shi-Tomasi, FAST, Harris):" << endl;
+
+
+    /*/ PARTE SHI-TOMASI OPENCV /*/
 
     // Misura il tempo per la funzione detectShiTomasiCorners (OCV)
-    auto start = high_resolution_clock::now();
     Mat imgCorners1_1 = imgCV1.clone();
-    Mat imgCorners2_1 = imgCV2.clone();
-
-    vector<Point2f> corners1_1, corners2_1;
+    vector<Point2f> corners1_1;
+    auto start = high_resolution_clock::now();
     detectShiTomasiCorners(imgCorners1_1, imgCorners1_1, corners1_1);
-    detectShiTomasiCorners(imgCorners2_1, imgCorners2_1, corners2_1);
-
-    imwrite("output/ocv_shi1.jpg", imgCorners1_1);
-    imwrite("output/ocv_shi2.jpg", imgCorners2_1);
     auto stop = high_resolution_clock::now();
+
+    // Salvo l'immagine
+    imwrite("output/ocv_shi1.jpg", imgCorners1_1);
     auto duration1 = duration_cast<milliseconds>(stop - start);
     cout << "\nTempo di esecuzione per Shi-Tomasi con OpenCV: " << duration1.count() << " ms" << endl;
+    cout << "Corner rilevati con Shi-Tomasi (OCV): " << corners1_1.size() << endl;
+    cout << "Immagine con i corner Shi-Tomasi (OCV) salvata." << endl;    
 
-    cout << "Immagini con i corner Shi-Tomasi (OCV) salvate." << endl;
 
-    // Misura il tempo per la funzione ShiTomasiCorners 
-    start = high_resolution_clock::now();
+    /*/ PARTE SHI-TOMASI REIMPLEMENTATO /*/
+
+    // Misura il tempo per la funzione ShiTomasiCorners (Mio)
     Mat imgCorners1_2 = imgCV1.clone();
-    Mat imgCorners2_2 = imgCV2.clone();
-
-    vector<KeyPoint> corners1_2, corners2_2;
-
-    // Eseguo la rilevazione dei corner Shi-Tomasi per entrambe le immagini
-    corners1_2 = ShiTomasiCorners(imgCorners1_2, 0.05, 1000, 7);
-    corners2_2 = ShiTomasiCorners(imgCorners2_2, 0.05, 1000, 7);
-
-    // Disegno i corner appena rilevati
-    Mat dst1 = imgCorners1_2.clone();
-    Mat dst2 = imgCorners2_2.clone();
-
-    for (size_t i = 0; i < corners1_2.size(); i++) {
-        circle(dst1, corners1_2[i].pt, 3, Scalar(0, 0, 255), FILLED);
-    }
-
-    for (size_t i = 0; i < corners2_2.size(); i++) {
-        circle(dst2, corners2_2[i].pt, 3, Scalar(0, 0, 255), FILLED);
-    }
-
-    // Salviamo le immagini con i corner disegnati
-    imwrite("output/my_shi1.jpg", dst1);
-    imwrite("output/my_shi2.jpg", dst2);
+    start = high_resolution_clock::now();
+    vector<KeyPoint> corners1_2 = ShiTomasiCorners(imgCorners1_2, 0.08, 1000, 7);
     stop = high_resolution_clock::now();
+
+    // Disegna i corner rilevati
+    Mat dst1 = imgCorners1_2.clone();
+    for (const auto& pt : corners1_2) {
+        circle(dst1, pt.pt, 3, Scalar(0, 0, 255), FILLED);
+    }
+    imwrite("output/my_shi1.jpg", dst1);
     auto duration2 = duration_cast<milliseconds>(stop - start);
     cout << "Tempo di esecuzione per Shi-Tomasi reimplementato da me: " << duration2.count() << " ms" << endl;
+    cout << "Corner rilevati Shi-Tomasi reimplementato: " << corners1_2.size() << endl;
+    cout << "Immagine con i corner Shi-Tomasi salvata." << endl;
 
-    cout << "Immagini con i corner Shi-Tomasi salvate." << endl;
-
-    // Sovrapposizione delle immagini
+    // Sovrapposizione delle immagini (Shi-Tomasi OCV + Mio)
     Mat img1 = imread("output/ocv_shi1.jpg");
     Mat img2 = imread("output/my_shi1.jpg");
 
-    // Sovrapponi le immagini
     Mat result1;
     addWeighted(img1, 0.5, img2, 0.5, 0, result1);
 
     // Salva il risultato della sovrapposizione
-    imwrite("output/sovrapposizione_shi1.jpg", result1);
+    imwrite("output/sovrapposizione_shi.jpg", result1);
 
     cout << "Immagini sovrapposte salvate.\n" << endl;
 
-    start = high_resolution_clock::now();
+
+    /*/ PARTE FAST OPENCV /*/
+
     Mat imgFAST1 = imgCV1.clone();
-    Mat imgFAST2 = imgCV2.clone();
-    vector<KeyPoint> fastCorners1, fastCorners2;
-
-    // Eseguo FAST su entrambe le immagini
-    detectFASTCorners(imgFAST1, imgFAST1, fastCorners1);  
-    detectFASTCorners(imgFAST2, imgFAST2, fastCorners2);
-
-    // Salvo le immagini con i corner FAST
-    imwrite("output/ocv_fast1.jpg", imgFAST1);
-    imwrite("output/ocv_fast2.jpg", imgFAST2);
+    vector<KeyPoint> fastCorners1;
+    start = high_resolution_clock::now();
+    detectFASTCorners(imgFAST1, imgFAST1, fastCorners1);
     stop = high_resolution_clock::now();
+    imwrite("output/ocv_fast1.jpg", imgFAST1);
     auto duration3 = duration_cast<milliseconds>(stop - start);
     cout << "Tempo di esecuzione per FAST con OpenCV: " << duration3.count() << " ms" << endl;
+    cout << "Corner rilevati FAST (OCV): " << fastCorners1.size() << endl;
+    cout << "Immagine con i corner FAST (OCV) salvata." << endl;
 
-    cout << "Immagini con i corner FAST (OCV) salvate." << endl;
 
-    // Misura il tempo per la funzione FASTCorners
-    start = high_resolution_clock::now();
+    /*/ PARTE FAST REIMPLEMENTATO /*/
+
     Mat imgCorners1_3 = imgCV1.clone();
-    Mat imgCorners2_3 = imgCV2.clone();
-
-    vector<KeyPoint> corners1_3, corners2_3;
-
-    // Rilevazione corner con FAST per entrambe le immagini
-    corners1_3 = FASTCorners(imgCorners1_3, 50, true);
-    corners2_3 = FASTCorners(imgCorners2_3, 50, true);
-
-    // Disegno i corner FAST
-    Mat dst3 = imgCorners1_3.clone();
-    Mat dst4 = imgCorners2_3.clone();
-
-    for (size_t i = 0; i < corners1_3.size(); i++) {
-        circle(dst3, corners1_3[i].pt, 3, Scalar(0, 0, 255), FILLED);
-    }
-
-    for (size_t i = 0; i < corners2_3.size(); i++) {
-        circle(dst4, corners2_3[i].pt, 3, Scalar(0, 0, 255), FILLED);
-    }
-
-    // Salviamo le immagini con i corner FAST disegnati
-    imwrite("output/my_fast1.jpg", dst3);
-    imwrite("output/my_fast2.jpg", dst4);
+    start = high_resolution_clock::now();
+    vector<KeyPoint> corners1_3 = FASTCorners(imgCorners1_3, 50, true);
     stop = high_resolution_clock::now();
+
+    // Disegna i corner sulla prima immagine
+    Mat dst3 = imgCorners1_3.clone();
+    for (const auto& pt : corners1_3) {
+        circle(dst3, pt.pt, 3, Scalar(0, 0, 255), FILLED);
+    }
+    imwrite("output/my_fast1.jpg", dst3);
     auto duration4 = duration_cast<milliseconds>(stop - start);
     cout << "Tempo di esecuzione per FAST reimplementato da me: " << duration4.count() << " ms" << endl;
-
-    cout << "Immagini con i corner FAST salvate." << endl;
+    cout << "Corner rilevati Fast reimplementato: " << corners1_3.size() << endl;
+    cout << "Immagine con i corner FAST salvata." << endl;
 
     // Sovrapposizione delle immagini
     Mat img3 = imread("output/ocv_fast1.jpg");
@@ -150,30 +122,117 @@ int main() {
     addWeighted(img3, 0.5, img4, 0.5, 0, result2);
 
     // Salva il risultato della sovrapposizione
-    imwrite("output/sovrapposizione_fast1.jpg", result2);
+    imwrite("output/sovrapposizione_fast.jpg", result2);
+
+    cout << "Immagini sovrapposte salvate.\n" << endl;
+
+    Mat imgHarris1 = imgCV1.clone();
+    Mat result3;
+
+
+    /*/ PARTE HARRIS OPENCV /*/
+
+    vector<KeyPoint> harrisOCVKeypoints;
+    start = high_resolution_clock::now();
+    detectHarrisCorners(imgHarris1, result3, 3, 3, 0.04, 80, 8, harrisOCVKeypoints);
+    stop = high_resolution_clock::now();
+    auto durationHarris = duration_cast<milliseconds>(stop - start);
+
+    imwrite("output/ocv_harris.jpg", result3);
+    cout << "Tempo di esecuzione per Harris con OpenCV: " << durationHarris.count() << " ms" << endl;
+    cout << "Corner rilevati Harris (OCV): " << harrisOCVKeypoints.size() << endl;
+    cout << "Immagini con i corner Harris (OCV) salvata." << endl;
+
+
+    /*/ PARTE HARRIS REIMPLEMENTATO /*/
+
+    Mat imgHarris2 = imgCV1.clone();
+
+    start = high_resolution_clock::now();
+    vector<KeyPoint> keypoints = HarrisCorners(imgHarris2, 5, 0.2);
+    stop = high_resolution_clock::now();
+
+    Mat result4 = imgHarris2.clone();
+    for (const auto& kp : keypoints) {
+        circle(result4, kp.pt, 3, Scalar(0, 0, 255), FILLED);
+    }
+
+    auto durationHarris2 = duration_cast<milliseconds>(stop - start);
+
+    imwrite("output/my_harris.jpg", result4);
+    cout << "Tempo di esecuzione per Harris reimplementato da me: " << durationHarris2.count() << " ms" << endl;
+    cout << "Corner rilevati Harris reimplementato: " << keypoints.size() << endl;
+    cout << "Immagine con i corner Harris salvata." << endl;
+
+    // Sovrapposizione delle immagini
+    Mat img5 = imread("output/my_harris.jpg");
+    Mat img6 = imread("output/ocv_harris.jpg");
+
+    // Sovrapponi le immagini
+    Mat result5;
+    addWeighted(img5, 0.5, img6, 0.5, 0, result5);
+
+    // Salva il risultato della sovrapposizione
+    imwrite("output/sovrapposizione_harris.jpg", result5);
 
     cout << "Immagini sovrapposte salvate.\n" << endl;
 
     // Parte Descriptor Matching
-    cout << "\n- Parte Descriptor Matching (ORB, SIFT):" << endl;
+    cout << "- Parte Descriptor Matching (ORB, SIFT):" << endl;
 
     Mat orbImg1 = imgCV1.clone();
     Mat orbImg2 = imgCV2.clone();
 
     Mat orbMatches;
+    start = high_resolution_clock::now();
     detectAndMatchORB(orbImg1, orbImg2, orbMatches);
+    stop = high_resolution_clock::now();
+    auto durationOCVORB = duration_cast<milliseconds>(stop - start);
 
-    imwrite("output/orb_matches.jpg", orbMatches);
-    cout << "Immagini con i match ORB salvate." << endl;
+    imwrite("output/ocv_orb.jpg", orbMatches);
+    cout << "Tempo di esecuzione ORB con OpenCV: " << durationOCVORB.count() << " ms" << endl;
+    cout << "Immagini con i match ORB (OCV) salvate.\n" << endl;
 
+    
+    Mat myORB1 = imgCV1.clone();
+    Mat myORB2 = imgCV2.clone();
+    
+    vector<KeyPoint> myKeypoints1, myKeypoints2;
+    Mat myDescriptors1, myDescriptors2;
+    vector<DMatch> myMatches;
+    
+    start = high_resolution_clock::now();
+    computeORB(myORB1, myORB2, myKeypoints1, myKeypoints2, myDescriptors1, myDescriptors2, myMatches);
+    stop = high_resolution_clock::now();
+    
+    Mat myOrbOutput;
+    drawMatches(myORB1, myKeypoints1, myORB2, myKeypoints2, myMatches, myOrbOutput, Scalar(0, 0, 255), Scalar(0, 0, 255));
+    
+    imwrite("output/my_orb.jpg", myOrbOutput);
+    
+    auto duration_myorb = duration_cast<milliseconds>(stop - start);
+    
+    cout << "Tempo di esecuzione ORB reimplementato da me: " << duration_myorb.count() << " ms" << endl;
+    cout << "Immagini con i match ORB reimplementato da me salvate." << endl;
+
+    // Sovrapposizione tra ORB (OCV) e ORB (mio)
+    Mat orbMatchesImg = imread("output/ocv_orb.jpg");
+    Mat myOrbMatchesImg = imread("output/my_orb.jpg");
+
+    Mat orbOverlay;
+    addWeighted(orbMatchesImg, 0.5, myOrbMatchesImg, 0.5, 0, orbOverlay);
+    imwrite("output/sovrapposizione_orb.jpg", orbOverlay);
+    cout << "Immagini sovrapposte salvate." << endl;
+    
+    /*
     Mat siftImg1 = imgCV1.clone();
     Mat siftImg2 = imgCV2.clone();
 
     Mat siftMatches;
     detectAndMatchSIFT(siftImg1, siftImg2, siftMatches);
 
-    imwrite("output/sift_matches.jpg", siftMatches);
+    imwrite("output/ocv_sift.jpg", siftMatches);
     cout << "Immagine con i match SIFT salvata." << endl;
-
+    */
     return 0;
 }

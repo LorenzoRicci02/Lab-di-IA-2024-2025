@@ -5,13 +5,7 @@
 using namespace cv;
 using namespace std;
 
-
-// Funzione per ridimensionare l'immagine sfruttando l'interpolazione bilineare
-void resizeImage(const Mat& src, Mat& dst, int newWidth, int newHeight) {
-    Size newSize(newWidth, newHeight);
-    resize(src, dst, newSize, 0, 0, INTER_LINEAR);
-}
-
+// Funzione per rilevare gli angoli Shi-Tomasi
 void detectShiTomasiCorners(const Mat& src, Mat& dst, vector<Point2f>& corners, int maxCorners, double qualityLevel, double minDistance) {
     // Converto l'immagine in scala di grigi
     Mat gray;
@@ -27,6 +21,7 @@ void detectShiTomasiCorners(const Mat& src, Mat& dst, vector<Point2f>& corners, 
     }
 }
 
+// Funzione per rilevare i corner con il metodo FAST
 void detectFASTCorners(const Mat& src, Mat& dst, vector<KeyPoint>& keypoints, int threshold, bool nonMaxSuppression) {
     // Converto in scala di grigi
     Mat gray;
@@ -38,6 +33,54 @@ void detectFASTCorners(const Mat& src, Mat& dst, vector<KeyPoint>& keypoints, in
 
     // Disegno i keypoints sull'immagine
     dst = src.clone();
-    drawKeypoints(src, keypoints, dst, Scalar(0, 255, 0), DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+    for (const auto& kp : keypoints) {
+        Point pt(cvRound(kp.pt.x), cvRound(kp.pt.y));
+        circle(dst, pt, 3, Scalar(0, 255, 0), FILLED);
+    }
 }
+
+// Funzione per rilevare i corner con il metodo Harris
+void detectHarrisCorners(const Mat& src, Mat& dst, double blockSize, double ksize, double k,
+    double threshold, double minDistance, vector<KeyPoint>& keypoints) {
+    Mat gray;
+    cvtColor(src, gray, COLOR_BGR2GRAY);
+
+    Mat harrisResponse;
+    cornerHarris(gray, harrisResponse, static_cast<int>(blockSize), static_cast<int>(ksize), k);
+
+    Mat harrisNorm;
+    normalize(harrisResponse, harrisNorm, 0, 255, NORM_MINMAX, CV_32FC1);
+
+    dst = src.clone();
+    keypoints.clear();
+
+    // Per salvare i punti che rispettano la distanza minima
+    vector<Point2f> acceptedCorners;
+
+    for (int y = 0; y < harrisNorm.rows; y++) {
+        for (int x = 0; x < harrisNorm.cols; x++) {
+            float response = harrisNorm.at<float>(y, x);
+            if (response > threshold) {
+                Point2f pt(x, y);
+
+                // Verifico se è lontano abbastanza dagli altri corner
+                bool tooClose = false;
+                for (const auto& existing : acceptedCorners) {
+                    if (norm(existing - pt) < minDistance) {
+                        tooClose = true;
+                        break;
+                    }
+                }
+
+                if (!tooClose) {
+                    acceptedCorners.push_back(pt);
+                    keypoints.emplace_back(KeyPoint(pt, 1.f));
+                    circle(dst, pt, 3, Scalar(0, 255, 0), FILLED);
+                }
+            }
+        }
+    }
+}
+
+
 

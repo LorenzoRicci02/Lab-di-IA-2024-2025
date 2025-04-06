@@ -14,4 +14,6 @@
 25/03/2025 - Reimplementato FAST
 26/03/2025 - Confronto Fast,Shi fatti da me con quelli fatti da OpenCV
 01/04/2025 - Aggiunta sovrapposizione delle foto con i corner detectati da me e da ocv
-02/04/2025 - Iniziato a reimplementare SIFT
+02/04/2025 - Iniziato a reimplementare SIFT (Sospeso)
+03/04/2025 - Migliorato il main e inizio a implementare ORB (con mio brief e mio fast)
+06/04/2025 - Completati ORB e Harris

@@ -12,6 +12,8 @@ add_executable(FaceScan
     src/ocv_orb.cpp
     src/my_corners.cpp
     src/my_sift.cpp
+    src/my_brief.cpp
+    src/my_orb.cpp
 )
 
 # Collega OpenCV

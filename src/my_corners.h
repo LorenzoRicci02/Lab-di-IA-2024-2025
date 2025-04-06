@@ -20,4 +20,12 @@ bool fastHighSpeedTest(const Mat &img, int x, int y, int threshold);
 void nonMaximumSuppression(vector<KeyPoint> &keypoints, const Mat &img, int dist = 3);
 vector<KeyPoint> FASTCorners(const Mat& sourceImage, int threshold, bool nonMaxSuppression);
 
+// Harris
+pair<Mat, Mat> gradient(const Mat& img);
+tuple<Mat, Mat, Mat> structureTensor(const Mat& Ix, const Mat& Iy, int windowSize);
+Mat harrisResponse(const Mat& SxSx, const Mat& SySy, const Mat& SxSy);
+Mat NMS_Harris(const Mat& corners, float threshold);
+vector<KeyPoint> extractKeypoints(const Mat& corners);
+vector<KeyPoint> HarrisCorners(const Mat& imgRGB, int window, float threshold);
+
 #endif 
