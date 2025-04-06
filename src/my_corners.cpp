@@ -56,10 +56,10 @@ vector<KeyPoint> ShiTomasiCorners(const Mat& sourceImage, double qualityRatio, i
     cvtColor(sourceImage, grayImg, COLOR_BGR2GRAY);
     grayImg.convertTo(grayImg, CV_64F);
 
-    // 2. Gradienti
+    // 2. Calcolo Gradienti Ix e Iy
     auto [gradX, gradY] = computeDerivatives(grayImg);
 
-    // 3. Mappa dei punteggi (autovalore min)
+    // 3. Matrice dei punteggi (autovalore min di H per ciascun pixel)
     Mat scoreMap = Mat::zeros(grayImg.size(), CV_64F);
     double peakResponse = 0;
     int halfPatch = patchSize / 2;
@@ -68,7 +68,7 @@ vector<KeyPoint> ShiTomasiCorners(const Mat& sourceImage, double qualityRatio, i
         for (int col = halfPatch; col < grayImg.cols - halfPatch; col++) {
             double a = 0, b = 0, c = 0;
 
-            // Somma manuale su finestra patchSize x patchSize
+            // Per ciascun pixel genera la matrice H relativa
             for (int dy = -halfPatch; dy <= halfPatch; ++dy) {
                 for (int dx = -halfPatch; dx <= halfPatch; ++dx) {
                     int yk = row + dy;
@@ -80,17 +80,17 @@ vector<KeyPoint> ShiTomasiCorners(const Mat& sourceImage, double qualityRatio, i
                     c += iy * iy;
                 }
             }
-
+            // Estrae il min autovalore
             double lambdaMin = smallestEigenvalue(a, b, c);
             scoreMap.at<double>(row, col) = lambdaMin;
             if (lambdaMin > peakResponse) peakResponse = lambdaMin;
         }
     }
 
-    // 4. Soglia basata su qualità
+    // 4. Soglia basata su qualità (se un pixel è massimo locale ma sotto soglia viene scartato)
     double threshold = qualityRatio * peakResponse;
 
-    // 5. Non-maximum suppression
+    // 5. Non-maximum suppression sulla score map
     Mat suppressed = nonMaximumSuppression(scoreMap, patchSize);
 
     // 6. Estrazione dei keypoint
@@ -104,7 +104,7 @@ vector<KeyPoint> ShiTomasiCorners(const Mat& sourceImage, double qualityRatio, i
         }
     }
 
-    // 7. Se troppi keypoint, tieni solo i migliori
+    // 7. Se troppi keypoint, tieni solo i migliori (opzionale nel mio caso non influisce)
     if (keypoints.size() > maxPoints) {
         sort(keypoints.begin(), keypoints.end(), [](const KeyPoint& a, const KeyPoint& b) {
             return a.response > b.response;
@@ -118,7 +118,7 @@ vector<KeyPoint> ShiTomasiCorners(const Mat& sourceImage, double qualityRatio, i
 
 // FUNZIONI FAST
 
-// Definisco una circonferenza di raggio 3
+// Definisco una circonferenza di raggio 3 (16 pixel)
 vector<Point> circonferenza = {
     {0, -3}, {1, -3}, {2, -2}, {3, -1}, {3, 0}, {3, 1}, {2, 2}, {1, 3},
     {0, 3}, {-1, 3}, {-2, 2}, {-3, 1}, {-3, 0}, {-3, -1}, {-2, -2}, {-1, -3}
@@ -147,8 +147,8 @@ bool fastSegmentTest(const Mat &img, int x, int y, int threshold, int n) {
 // Test "preliminare" confronto con solo 4 pixel chiave (più rapido per questo prende il nome di highspeed)
 bool fastHighSpeedTest(const Mat &img, int x, int y, int threshold) {
     uchar pixel = img.at<uchar>(y, x);
-    vector<int> test_pixel = {1, 9, 5, 13};
-    int countHigh = 0, countLow = 0;
+    vector<int> test_pixel = {1, 9, 5, 13};   // 4 pixel chiave p1 p5 p9 p13
+    int countHigh = 0, countLow = 0;          // quanti più chiari e quanti più scuri
     for (int i = 0; i < test_pixel.size(); i++) {
         int j = test_pixel[i];
         int dx = x + (circonferenza[j].x);
@@ -162,49 +162,35 @@ bool fastHighSpeedTest(const Mat &img, int x, int y, int threshold) {
             countLow++;
         }
     }
-    return (countHigh >= 3 || countLow >= 3);
+    return (countHigh >= 3 || countLow >= 3);  // test impostato su almeno 3 più chiari o 3 più scuri
 }
 
 
 // Non maximum suppression
-void nonMaximumSuppression(vector<KeyPoint> &keypoints, const Mat &img, int dist) {
-    vector<float> V_keypoints(keypoints.size());
-    for (int i = 0; i < keypoints.size(); i++) {
-        KeyPoint kp = keypoints[i];
-        int x = kp.pt.x;
-        int y = kp.pt.y;
-        int sum = 0;
-        uchar pixel = img.at<uchar>(y, x);
-        for (const auto& pt : circonferenza) {
-            int dx = x + pt.x;
-            int dy = y + pt.y;
-            if (dx >= 0 && dx < img.cols && dy >= 0 && dy < img.rows) {
-                uchar nearest = img.at<uchar>(dy, dx);
-                sum += abs(pixel - nearest);
+void nonMaximumSuppression(vector<KeyPoint>& keypoints, int minDist) {
+    // Ordina per risposta decrescente
+    sort(keypoints.begin(), keypoints.end(), [](const KeyPoint& a, const KeyPoint& b) {
+        return a.response > b.response;
+    });
+
+    vector<KeyPoint> finalKeypoints;
+    
+    for (const auto& kp : keypoints) {
+        bool keep = true;
+        for (const auto& selected : finalKeypoints) {
+            if (norm(kp.pt - selected.pt) < minDist) {
+                keep = false;
+                break;
             }
         }
-        V_keypoints[i] = sum;
-    }
-    for (int i = 0; i < keypoints.size(); i++) {
-        KeyPoint kp = keypoints[i];
-        int x = kp.pt.x;
-        int y = kp.pt.y;
-        for (int j = 0; j < keypoints.size(); j++) {
-            if (i != j) {
-                KeyPoint kp2 = keypoints[j];
-                int x2 = kp2.pt.x;
-                int y2 = kp2.pt.y;
-                if (abs(x - x2) <= dist && abs(y - y2) <= dist) {
-                    if (V_keypoints[i] < V_keypoints[j]) {
-                        keypoints.erase(keypoints.begin() + i);
-                        i--;
-                        break;
-                    }
-                }
-            }
+        if (keep) {
+            finalKeypoints.push_back(kp);
         }
     }
+
+    keypoints = finalKeypoints;
 }
+
 
 
 vector<KeyPoint> FASTCorners(const Mat& sourceImage, int threshold, bool nonMaxSuppression) {
@@ -213,13 +199,13 @@ vector<KeyPoint> FASTCorners(const Mat& sourceImage, int threshold, bool nonMaxS
     vector<KeyPoint> keypoints;
     for (int y = 3; y < grayImg.rows - 3; y++) {
         for (int x = 3; x < grayImg.cols - 3; x++) {
-            if (fastHighSpeedTest(grayImg, x, y, threshold) && fastSegmentTest(grayImg, x, y, threshold)) {
+            if (fastHighSpeedTest(grayImg, x, y, threshold) && fastSegmentTest(grayImg, x, y, threshold)) { // Solo se passa il primo test preliminare si passa al secondo
                 keypoints.push_back(KeyPoint(x, y, 1));
             }
         }
     }
     if (nonMaxSuppression) {
-        nonMaximumSuppression(keypoints, grayImg);
+        nonMaximumSuppression(keypoints, 5);
     }
     return keypoints;
 }
