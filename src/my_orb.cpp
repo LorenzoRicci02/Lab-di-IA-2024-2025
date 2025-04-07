@@ -9,7 +9,12 @@
 using namespace cv;
 using namespace std;
 
-// Calcola l'orientamento di un keypoint per garantire l'invarianza alla rotazione (BRIEF di per se non è rotation invariant!)
+/* Calcola l'orientamento di un keypoint per garantire l'invarianza alla rotazione 
+
+ORB si occupa di assegnare l’orientamento ai keypoint.
+
+BRIEF usa quell’informazione per costruire i descrittori in modo orientato. */
+
 float computeOrientation(const Mat& image, const KeyPoint& kp, int patchSize = 31) {
     int x0 = round(kp.pt.x);
     int y0 = round(kp.pt.y);
@@ -83,7 +88,7 @@ void computeORB(const Mat& image1, const Mat& image2, vector<KeyPoint>& keypoint
     descriptors1 = computeBRIEF(image1, keypoints1, 32, briefBits);
     descriptors2 = computeBRIEF(image2, keypoints2, 32, briefBits);
 
-    // Effettuo il matching sempre con la mia funzione reimplementata
+    // Effettuo il matching sempre con BRIEF reimplementato
     vector<DMatch> matches = matchBRIEF(descriptors1, descriptors2);
     goodMatches = filterMatchesRANSAC(matches, keypoints1, keypoints2);
 

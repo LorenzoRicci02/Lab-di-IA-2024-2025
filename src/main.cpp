@@ -180,6 +180,9 @@ int main() {
     // Parte Descriptor Matching
     cout << "- Parte Descriptor Matching (ORB, SIFT):" << endl;
 
+
+    // PARTE ORB OCV //
+
     Mat orbImg1 = imgCV1.clone();
     Mat orbImg2 = imgCV2.clone();
 
@@ -193,6 +196,8 @@ int main() {
     cout << "Tempo di esecuzione ORB con OpenCV: " << durationOCVORB.count() << " ms" << endl;
     cout << "Immagini con i match ORB (OCV) salvate.\n" << endl;
 
+
+    // PARTE ORB REIMPLEMENTATO //
     
     Mat myORB1 = imgCV1.clone();
     Mat myORB2 = imgCV2.clone();

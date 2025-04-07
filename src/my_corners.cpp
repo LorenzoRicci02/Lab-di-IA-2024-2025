@@ -128,7 +128,7 @@ vector<Point> circonferenza = {
 // Test effettivo con n pixel consecutivi significativamente più scuri/più chiari del pixel target
 bool fastSegmentTest(const Mat &img, int x, int y, int threshold, int n) {
     uchar pixel = img.at<uchar>(y, x);
-    int countHigh = 0, countLow = 0;
+    int countUp = 0, countDown = 0;
     for (int i = 0; i < 16; i++) {
         int dx = x + circonferenza[i].x;
         int dy = y + circonferenza[i].y;
@@ -136,19 +136,19 @@ bool fastSegmentTest(const Mat &img, int x, int y, int threshold, int n) {
             continue;
         uchar nearest = img.at<uchar>(dy, dx);
         if (nearest > pixel + threshold) {
-            countHigh++;
+            countUp++;
         } else if (nearest < pixel - threshold) {
-            countLow++;
+            countDown++;
         }
     }
-    return (countHigh >= n || countLow >= n);
+    return (countUp >= n || countDown >= n);
 }
 
 // Test "preliminare" confronto con solo 4 pixel chiave (più rapido per questo prende il nome di highspeed)
 bool fastHighSpeedTest(const Mat &img, int x, int y, int threshold) {
     uchar pixel = img.at<uchar>(y, x);
     vector<int> test_pixel = {1, 9, 5, 13};   // 4 pixel chiave p1 p5 p9 p13
-    int countHigh = 0, countLow = 0;          // quanti più chiari e quanti più scuri
+    int countUp = 0, countDown = 0;          // quanti più chiari e quanti più scuri
     for (int i = 0; i < test_pixel.size(); i++) {
         int j = test_pixel[i];
         int dx = x + (circonferenza[j].x);
@@ -157,12 +157,12 @@ bool fastHighSpeedTest(const Mat &img, int x, int y, int threshold) {
             continue;
         uchar nearest = img.at<uchar>(dy, dx);
         if (nearest > pixel + threshold) {
-            countHigh++;
+            countUp++;
         } else if (nearest < pixel - threshold) {
-            countLow++;
+            countDown++;
         }
     }
-    return (countHigh >= 3 || countLow >= 3);  // test impostato su almeno 3 più chiari o 3 più scuri
+    return (countUp >= 3 || countDown >= 3);  // test impostato su almeno 3 più chiari o 3 più scuri
 }
 
 
@@ -223,12 +223,12 @@ pair<Mat, Mat> gradient(const Mat& img) {
     return {Ix, Iy};
 }
 
-// Calcolo Ix^2, Iy^2, IxIy
+// Compongo le matrici dei gradienti Ix^2, Iy^2, IxIy
 tuple<Mat, Mat, Mat> structureTensor(const Mat& Ix, const Mat& Iy, int windowSize) {
     int halfWindow = windowSize / 2;
-    Mat SxSx = Mat::zeros(Ix.size(), CV_32F);
-    Mat SySy = Mat::zeros(Ix.size(), CV_32F);
-    Mat SxSy = Mat::zeros(Ix.size(), CV_32F);
+    Mat SxSx = Mat::zeros(Ix.size(), CV_32F);  // Matrice che contiene il valore di Ix^2 per ogni pixel
+    Mat SySy = Mat::zeros(Ix.size(), CV_32F);  // Matrice che contiene il valore di Iy^2 per ogni pixel
+    Mat SxSy = Mat::zeros(Ix.size(), CV_32F);  // Matrice che contiene il valore di IxIy per ogni pixel
 
     for (int y = halfWindow; y < Ix.rows - halfWindow; y++) {
         for (int x = halfWindow; x < Ix.cols - halfWindow; x++) {
@@ -256,7 +256,7 @@ tuple<Mat, Mat, Mat> structureTensor(const Mat& Ix, const Mat& Iy, int windowSiz
 }
 
 
-// Calcolo la risposta di Harris (Determinante e Traccia)
+// Calcolo la risposta di Harris (Determinante e Traccia) per ogni matrice di Harris
 Mat harrisResponse(const Mat& SxSx, const Mat& SySy, const Mat& SxSy) {
     Mat corners = Mat::zeros(SxSx.size(), CV_32F);
     
@@ -350,7 +350,7 @@ vector<KeyPoint> HarrisCorners(const Mat& imgRGB, int window, float threshold) {
     // Step 3. Calcola la risposta di Harris
     Mat cornersNonSuppressed = harrisResponse(SxSx, SySy, SxSy);
 
-    // Step 4. Calcolo la treshold dinamnica basandomi sulla media e sulla risposta massima
+    // Step 4. Calcolo la treshold dinamnica basandomi sulla media degli score e sullo score massimo nella matrice senza nms
     double maxResponse = 0;
     double meanResponse = 0;
     minMaxLoc(cornersNonSuppressed, nullptr, &maxResponse);

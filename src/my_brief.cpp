@@ -10,7 +10,7 @@ using namespace std;
 // Pattern globale
 vector<Point> briefPattern;
 
-// Genera un pattern di coppie di punti, usato da BRIEF per confronti di intensità.
+// Genera un pattern di coppie di punti (32 coppie), usato da BRIEF per confronti di intensità.
 void generateBriefPattern(int n_pairs, int patch_size) {
     briefPattern.clear();
     random_device rd;
@@ -21,14 +21,14 @@ void generateBriefPattern(int n_pairs, int patch_size) {
     }
 }
 
-// Ruoto un punto attorno all'origine di un certo angolo (in radianti)
+// Serve a ruotare il pattern di un angolo = kp.angle (in radianti)
 Point rotatePoint(const Point& p, float angle) {
     float cosA = cos(angle);
     float sinA = sin(angle);
     return Point(cvRound(p.x * cosA - p.y * sinA), cvRound(p.x * sinA + p.y * cosA));
 }
 
-// Estraggo i descrittori BRIEF da una lista di keypoint 
+// Estrae i descrittori binari da una lista di keypoints
 Mat computeBRIEF(const Mat &img, const vector<KeyPoint> &keypoints, int patch_size, int n_bits) {
     if (briefPattern.size() != 2 * n_bits)
         generateBriefPattern(n_bits, patch_size);
@@ -42,6 +42,7 @@ Mat computeBRIEF(const Mat &img, const vector<KeyPoint> &keypoints, int patch_si
     // Matrice dei descrittori (ogni riga corrisponde a un keypoint)
     Mat descriptors = Mat::zeros((int)keypoints.size(), n_bits / 8, CV_8U);
 
+    // Per ogni keypoint ruoto il pattern di kp.angle (angolo di orientamento del kp di riferimento)
     for (int i = 0; i < keypoints.size(); ++i) {
         const KeyPoint& kp = keypoints[i];
         float angle = kp.angle * static_cast<float>(CV_PI / 180.0); // in radianti
@@ -49,18 +50,19 @@ Mat computeBRIEF(const Mat &img, const vector<KeyPoint> &keypoints, int patch_si
 
         bitset<256> desc;
         
-        // Per ogni keypoint
+        // Per ogni keypoint confronto a coppie i vari pixel del pattern ruotato
         for (int j = 0; j < n_bits; ++j) {
             Point p1 = rotatePoint(briefPattern[2 * j], angle) + center;
             Point p2 = rotatePoint(briefPattern[2 * j + 1], angle) + center;
 
             if (p1.inside(Rect(0, 0, gray.cols, gray.rows)) &&
                 p2.inside(Rect(0, 0, gray.cols, gray.rows))) {
+                // Popolo il descrittore relativo al keypoint in questione se p1 > p2 desc[j] = 1, viceversa 0
                 desc[j] = gray.at<uchar>(p1) < gray.at<uchar>(p2);
             }
         }
 
-        // Converto i bit del descrittore in byte e li inserisce nella matrice
+        // Converto i bit del descrittore in byte e li inserisce nella matrice dei descrittori
         for (int j = 0; j < n_bits / 8; ++j) {
             uchar byte = 0;
             for (int b = 0; b < 8; ++b) {
@@ -73,7 +75,7 @@ Mat computeBRIEF(const Mat &img, const vector<KeyPoint> &keypoints, int patch_si
     return descriptors;
 }
 
-// Calcola la distanza di Hamming tra due byte (numero di bit diversi)
+// Calcola la distanza di Hamming tra due byte (numero di bit diversi ES: 1011 e 1010 hanno distanza 1)
 int hammingDistanceByte(uchar a, uchar b) {
     uchar val = a ^ b;
     int count = 0;
@@ -84,7 +86,7 @@ int hammingDistanceByte(uchar a, uchar b) {
     return count;
 }
 
-// Matcho i descrittori BRIEF utilizzando la distanza di Hamming calcolata sopra
+// Matcho i descrittori BRIEF utilizzando la distanza di Hamming calcolata con hammingDistanceByte 
 vector<DMatch> matchBRIEF(const Mat &desc1, const Mat &desc2) {
     vector<DMatch> matches;
 

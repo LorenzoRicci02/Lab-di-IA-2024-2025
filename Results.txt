@@ -1,0 +1,26 @@
+[07/04/2025]
+
+Tempo di esecuzione per Shi-Tomasi con OpenCV: 28 ms
+Corner rilevati con Shi-Tomasi (OCV): 228
+Tempo di esecuzione per Shi-Tomasi reimplementato da me: 293 ms
+Corner rilevati Shi-Tomasi reimplementato: 195
+
+Tempo di esecuzione per FAST con OpenCV: 2 ms
+Corner rilevati FAST (OCV): 359
+Tempo di esecuzione per FAST reimplementato da me: 100 ms
+Corner rilevati Fast reimplementato: 361
+
+Tempo di esecuzione per Harris con OpenCV: 17 ms
+Corner rilevati Harris (OCV): 193
+Tempo di esecuzione per Harris reimplementato da me: 167 ms
+Corner rilevati Harris reimplementato: 227
+
+Keypoints nella prima immagine ORB (OCV): 367
+Keypoints nella seconda immagine ORB (OCV): 367
+Numero di match rilevati con ORB (OCV): 359
+Tempo di esecuzione ORB con OpenCV: 24 ms
+
+Keypoints nella prima immagine ORB (MY): 361
+Keypoints nella seconda immagine ORB (MY): 361
+Numero di match rilevati con ORB (MY): 232
+Tempo di esecuzione ORB reimplementato da me: 390 ms

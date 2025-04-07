@@ -1,0 +1,233 @@
+// SHI TOMASI
+
+pair<Mat, Mat> computeDerivatives(const Mat& image) {
+    Mat gradX, gradY;
+    Sobel(image, gradX, CV_64F, 1, 0, 3);
+    Sobel(image, gradY, CV_64F, 0, 1, 3);
+    return {gradX, gradY};
+}
+
+Prende in input un immagine e la convolve con gli operatori di sobel Gx e Gy (kernel 3x3)
+e restituisce i gradienti Ix e Iy
+
+inline double smallestEigenvalue(double a, double b, double c) {
+    double trace = a + c;
+    double det = a * c - b * b;
+    double delta = sqrt(trace * trace - 4 * det);
+    return 0.5 * (trace - delta);
+}
+
+Data la matrice di Harris (a, b)(b, c) con a = Ix^2 b = IxIy e c = Iy^2 restituisce il min
+tra gli autovalori di H
+
+
+Mat nonMaximumSuppression(const Mat& responseMap, int windowSize) {
+    Mat filtered = Mat::zeros(responseMap.size(), CV_64F);
+    int halfWindow = windowSize / 2;
+
+    for (int row = halfWindow; row < responseMap.rows - halfWindow; row++) {
+        for (int col = halfWindow; col < responseMap.cols - halfWindow; col++) {
+            double current = responseMap.at<double>(row, col);
+            bool isMax = true;
+            for (int dy = -halfWindow; dy <= halfWindow && isMax; dy++) {
+                for (int dx = -halfWindow; dx <= halfWindow; dx++) {
+                    if (dx == 0 && dy == 0) continue;
+                    if (responseMap.at<double>(row + dy, col + dx) > current) {
+                        isMax = false;
+                        break;
+                    }
+                }
+            }
+            if (isMax) filtered.at<double>(row, col) = current;
+        }
+    }
+
+    return filtered;
+}
+
+prende in input la matrice degli score di shiTomasi(dove ogni elemento della matrice è relativo al min autovalore associato al pixel) e per ogni valore verifica se esso è il massimo locale
+all'interno di una finestra di dimensione(windowsize x windowsize) se è il massimo, lo mantiene nel punto corrispondente nella filtered (è corner se supera anche la qualityMin), 
+altrimenti, rimane 0.
+
+// FAST
+
+bool fastHighSpeedTest(const Mat &img, int x, int y, int threshold) {
+    uchar pixel = img.at<uchar>(y, x);
+    vector<int> test_pixel = {1, 9, 5, 13};   // 4 pixel chiave p1 p5 p9 p13
+    int countUp = 0, countDown = 0;          // quanti più chiari e quanti più scuri
+    for (int i = 0; i < test_pixel.size(); i++) {
+        int j = test_pixel[i];
+        int dx = x + (circonferenza[j].x);
+        int dy = y + (circonferenza[j].y);
+        if (dx < 0 || dx >= img.cols || dy < 0 || dy >= img.rows)
+            continue;
+        uchar nearest = img.at<uchar>(dy, dx);
+        if (nearest > pixel + threshold) {
+            countUp++;
+        } else if (nearest < pixel - threshold) {
+            countDown++;
+        }
+    }
+    return (countUp >= 3 || countDown >= 3);  // test impostato su almeno 3 più chiari o 3 più scuri
+}
+
+Controlla che il pixel centrale (target) sia almeno più chiaro o più scuro di 3 su 4 pixel chiave p1,p5,p9,p13
+
+bool fastSegmentTest(const Mat &img, int x, int y, int threshold, int n) {
+    uchar pixel = img.at<uchar>(y, x);
+    int countUp = 0, countDown = 0;
+    for (int i = 0; i < 16; i++) {
+        int dx = x + circonferenza[i].x;
+        int dy = y + circonferenza[i].y;
+        if (dx < 0 || dx >= img.cols || dy < 0 || dy >= img.rows)
+            continue;
+        uchar nearest = img.at<uchar>(dy, dx);
+        if (nearest > pixel + threshold) {
+            countUp++;
+        } else if (nearest < pixel - threshold) {
+            countDown++;
+        }
+    }
+    return (countUp >= n || countDown >= n);
+}
+
+Test effettivo sui 16 pixel di circonferenza rispetto al pixel centrale, se n pixel solo consecutivamente più chiari/più scuri
+allora viene candidato a corner il pixel centrale
+
+
+// Harris
+
+pair<Mat, Mat> gradient(const Mat& img) {
+    Mat Ix, Iy;
+
+    // Calcola il gradiente usando Sobel
+    Sobel(img, Ix, CV_32F, 1, 0, 3);  // Gradiente in X
+    Sobel(img, Iy, CV_32F, 0, 1, 3);  // Gradiente in Y
+
+    return {Ix, Iy};
+}
+
+Calcola i gradienti Ix e Iy
+
+tuple<Mat, Mat, Mat> structureTensor(const Mat& Ix, const Mat& Iy, int windowSize) {
+    int halfWindow = windowSize / 2;
+    Mat SxSx = Mat::zeros(Ix.size(), CV_32F);  // Matrice che contiene il valore di Ix^2 per ogni pixel
+    Mat SySy = Mat::zeros(Ix.size(), CV_32F);  // Matrice che contiene il valore di Iy^2 per ogni pixel
+    Mat SxSy = Mat::zeros(Ix.size(), CV_32F);  // Matrice che contiene il valore di IxIy per ogni pixel
+
+    for (int y = halfWindow; y < Ix.rows - halfWindow; y++) {
+        for (int x = halfWindow; x < Ix.cols - halfWindow; x++) {
+            float sumIx2 = 0.0f;
+            float sumIy2 = 0.0f;
+            float sumIxIy = 0.0f;
+
+            for (int dy = -halfWindow; dy <= halfWindow; dy++) {
+                for (int dx = -halfWindow; dx <= halfWindow; dx++) {
+                    float ix = Ix.at<float>(y + dy, x + dx);
+                    float iy = Iy.at<float>(y + dy, x + dx);
+                    sumIx2 += ix * ix;
+                    sumIy2 += iy * iy;
+                    sumIxIy += ix * iy;
+                }
+            }
+
+            SxSx.at<float>(y, x) = sumIx2;
+            SySy.at<float>(y, x) = sumIy2;
+            SxSy.at<float>(y, x) = sumIxIy;
+        }
+    }
+
+    return {SxSx, SySy, SxSy};
+}
+
+Funzione che restituisce 3 matrici SxSx composta dagli Ix^2 di ogni pixel, SySy dagli Iy^2 e SxSy dagli IxIy
+
+Mat harrisResponse(const Mat& SxSx, const Mat& SySy, const Mat& SxSy) {
+    Mat corners = Mat::zeros(SxSx.size(), CV_32F);
+    
+    for (int y = 0; y < SxSx.rows; y++) {
+        for (int x = 0; x < SxSx.cols; x++) {
+            float a = SxSx.at<float>(y, x);
+            float b = SxSy.at<float>(y, x);
+            float c = SySy.at<float>(y, x);
+            
+            float det = a * c - b * b;
+            float trace = a + c;
+
+            if (trace != 0) {
+                corners.at<float>(y, x) = det / trace; 
+            } else {
+                corners.at<float>(y, x) = 0;
+            }
+        }
+    }
+
+    // Normalizzo i valori della risposta
+    double minVal, maxVal;
+    minMaxLoc(corners, &minVal, &maxVal);
+    for (int y = 0; y < corners.rows; ++y) {
+        for (int x = 0; x < corners.cols; ++x) {
+            float& val = corners.at<float>(y, x);
+            val = 255.0f * (val - (float)minVal) / ((float)maxVal - (float)minVal + 1e-10f);
+        }
+    }
+    
+    return corners;
+}
+
+Forma la matrice di Harris per ogni pixel e ne calcola det e traccia assegnando lo score al pixel
+
+Mat NMS_Harris(const Mat& corners, float threshold) {
+    Mat cornersSuppressed = Mat::zeros(corners.size(), CV_32F);
+
+    for (int y = 1; y < corners.rows - 1; y++) {
+        for (int x = 1; x < corners.cols - 1; x++) {
+            float pixel = corners.at<float>(y, x);
+            bool localMax = true;
+
+            // Controlla se è il massimo locale in una finestra 3x3
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    if (pixel < corners.at<float>(y + dy, x + dx)) {
+                        localMax = false;
+                    }
+                }
+                if (!localMax) break;
+            }
+
+            // Se è massimo locale e supera la soglia
+            if (localMax && pixel > threshold) {
+                cornersSuppressed.at<float>(y, x) = pixel;
+            }
+        }
+    }
+
+    return cornersSuppressed;
+}
+
+NMS scorre l'immagine con una finestra 3x3 individuando i pixel max locali candidandoli a corner
+
+
+// BRIEF
+
+void generateBriefPattern(int n_pairs, int patch_size) {
+    briefPattern.clear();
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<int> dist(-patch_size / 2, patch_size / 2);
+    for (int i = 0; i < 2 * n_pairs; i++) {
+        briefPattern.emplace_back(dist(gen), dist(gen));
+    }
+}
+
+genera un pattern random di 32 coppie di pixel usate da Brief per generare i descrittori binari
+
+Point rotatePoint(const Point& p, float angle) {
+    float cosA = cos(angle);
+    float sinA = sin(angle);
+    return Point(cvRound(p.x * cosA - p.y * sinA), cvRound(p.x * sinA + p.y * cosA));
+}
+
+Serve a ruotare il pattern di un angolo = kp.angle (in radianti) utile dopo
+
+
