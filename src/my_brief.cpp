@@ -75,7 +75,7 @@ Mat computeBRIEF(const Mat &img, const vector<KeyPoint> &keypoints, int patch_si
     return descriptors;
 }
 
-// Calcola la distanza di Hamming tra due byte (numero di bit diversi ES: 1011 e 1010 hanno distanza 1)
+// Calcola la distanza di Hamming tra due byte (numero di bit diversi ES: 10000001 e 10000000 hanno distanza 1)
 int hammingDistanceByte(uchar a, uchar b) {
     uchar val = a ^ b;
     int count = 0;

@@ -166,7 +166,7 @@ bool fastHighSpeedTest(const Mat &img, int x, int y, int threshold) {
 }
 
 
-// Non maximum suppression
+// Non maximum suppression su distanza min
 void nonMaximumSuppression(vector<KeyPoint>& keypoints, int minDist) {
     // Ordina per risposta decrescente
     sort(keypoints.begin(), keypoints.end(), [](const KeyPoint& a, const KeyPoint& b) {
@@ -382,6 +382,21 @@ vector<KeyPoint> HarrisCorners(const Mat& imgRGB, int window, float threshold) {
 
     return filteredKeypoints;
 }
+
+
+/*Es Harris
+
+// Matrice 3x3 di partenza       -->       Mat 3x3 gradienti Ix       -->       Mat 3x3 gradienti Ix^2
+// [ p(1,1)  -     - ]                    [ Ix(1,1)   -     - ]                    [ Ix^2(1,1)   -     - ]
+// [   -     -     - ]                    [   -       -     - ]                    [    -        -     - ]
+// [   -     -     - ]                    [   -       -     - ]                    [    -        -     - ]
+
+Mat 3x3 gradienti Iy             -->     Mat 3x3 gradienti Iy^2       -->       Mat 3x3 gradienti IxIy
+[ Iy(1,1)   -     - ]                    [ Iy^2(1,1)   -     - ]                    [ IxIy(1,1)   -     - ]
+[   -       -     - ]                    [    -        -     - ]                    [    -        -     - ]
+[   -       -     - ]                    [    -        -     - ]                    [    -        -     - ]
+*/
+
 
 
 

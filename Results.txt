@@ -24,3 +24,22 @@ Keypoints nella prima immagine ORB (MY): 361
 Keypoints nella seconda immagine ORB (MY): 361
 Numero di match rilevati con ORB (MY): 232
 Tempo di esecuzione ORB reimplementato da me: 390 ms
+
+/////////////////////////////////////////////////////
+
+Shi-Tomasi
+
+Come previsto, l'implementazione di OpenCV risulta significativamente più veloce rispetto alla mia. La differenza di circa 30 corner rilevati può essere considerata accettabile, dato che il numero totale dipende dai parametri passati (soglia, qualità minima, ecc.). Nella mia versione, l’utilizzo di funzioni come Sobel() contribuisce a una buona efficienza rispetto a un’implementazione completamente manuale, ma resta comunque più lenta di OpenCV, che sfrutta ottimizzazioni hardware avanzate. Il comportamento generale è comunque coerente e corretto.
+
+FAST
+
+OpenCV è estremamente veloce, come atteso, la mia implementazione risulta la più veloce tra tutte quelle da me realizzate. Nonostante l’assenza di funzioni ottimizzate e la separazione tra i test Segment e HighSpeed, che vengono eseguiti per ogni singolo pixel, la struttura dell’algoritmo e la semplicità dei confronti logici rendono l’esecuzione molto rapida. Inoltre, il numero di corner rilevati è coerente con le proprietà dell’algoritmo FAST, che tende a rilevare molti punti salienti. Dal punto di vista della correttezza, il risultato è coerente.
+
+Harris
+
+La mia implementazione di Harris è più veloce di quella di Shi-Tomasi sempre fatta da me anche se i due algoritmi hanno i primi passaggi in comune, poiché Harris sfrutta un approccio ottimizzato che prevede il calcolo preliminare delle tre matrici SxSx, SySy e SxSy, evitando di effettuare calcoli pixel per pixel durante la valutazione. Inoltre, la formula utilizzata per assegnare lo score al corner è computazionalmente più leggera rispetto a quella utilizzata per ShiTomasi. OpenCV rimane più veloce, ma la mia versione offre un buon compromesso tra performance e accuratezza. Rileva più corner rispetto alla versione OpenCV, ma senza introdurre errori visibili nelle immagini.
+
+ORB
+
+La versione di OpenCV si dimostra più veloce ed efficiente rispetto alla mia, che è basata sull’unione dei miei FAST e BRIEF reimplementati. Questa composizione giustifica l’elevato tempo di esecuzione. Tuttavia, il numero di keypoint rilevati è esattamente lo stesso di quello ottenuto dal mio FAST nella stessa immagine, a conferma che il mio ORB utilizza correttamente la mia versione del rilevatore. Il matching risulta più selettivo: vengono scartati alcuni match effettivamente corretti che OpenCV invece accetta. Questo comportamento è migliorabile affinando l’implementazione di BRIEF. Il comportamento generale potrebbe essere migliorato ma nel complesso la mia implementazione di ORB rispetta l'invarianza alla rotazione e non genera match errati.
+
