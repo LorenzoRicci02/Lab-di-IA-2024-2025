@@ -54,7 +54,7 @@ int main() {
     // Misura il tempo per la funzione ShiTomasiCorners (Mio)
     Mat imgCorners1_2 = imgCV1.clone();
     start = high_resolution_clock::now();
-    vector<KeyPoint> corners1_2 = ShiTomasiCorners(imgCorners1_2, 0.08, 1000, 7);
+    vector<KeyPoint> corners1_2 = ShiTomasiCorners(imgCorners1_2, 0.1, 1000, 5);
     stop = high_resolution_clock::now();
 
     // Disegna i corner rilevati
